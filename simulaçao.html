@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Laboratório Secreto — Escape Room Química</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Share+Tech+Mono&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --violet-dark:#1a0a2e;--violet-mid:#2d1854;--violet-bright:#6c3fc5;--violet-light:#9b6de0;--violet-glow:#c39af0;
+  --yellow-dark:#7a5200;--yellow-mid:#c47f00;--yellow-bright:#f5b800;--yellow-light:#ffd966;
+  --bg:#0d0520;--surface:#180c30;--surface2:#22103d;--text:#f0e6ff;--text-dim:#a98fd4;
+  --green:#1db86e;--green-dark:#071c0f;--red:#cc3333;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Crimson Text',serif;min-height:100vh;overflow-x:hidden;
+  cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='4' fill='%23f5b800'/%3E%3C/svg%3E") 10 10,crosshair}
+
+/* BG */
+#lab-bg{position:fixed;inset:0;z-index:0;background:var(--bg);overflow:hidden}
+.lab-shelf{position:absolute;bottom:0;left:0;right:0;height:140px;background:#120828;border-top:3px solid #2d1854}
+.shelf-plank{position:absolute;top:60px;left:0;right:0;height:12px;background:#3d2060;border-top:2px solid #5a3090;border-bottom:2px solid #1a0a2e}
+.flask{position:absolute;bottom:80px;display:flex;flex-direction:column;align-items:center}
+.flask-body{width:30px;height:40px;border-radius:0 0 50% 50%;border:2px solid;position:relative;overflow:hidden}
+.flask-neck{width:12px;height:18px;border-left:2px solid;border-right:2px solid;margin-bottom:-2px}
+.flask-liquid{position:absolute;bottom:0;left:0;right:0;animation:bubbling 2s ease-in-out infinite}
+@keyframes bubbling{0%,100%{height:55%}50%{height:65%}}
+.flask-glow{filter:drop-shadow(0 0 8px currentColor)}
+.f1{left:5%}.f1 .flask-body{border-color:#f5b800;color:#f5b800}.f1 .flask-neck{border-color:#f5b800}.f1 .flask-liquid{background:#f5b800;height:50%}
+.f2{left:12%}.f2 .flask-body{border-color:#9b6de0;color:#9b6de0}.f2 .flask-neck{border-color:#9b6de0}.f2 .flask-liquid{background:#6c3fc5;height:60%}
+.f3{left:20%}.f3 .flask-body{border-color:#ffd966;color:#ffd966;width:20px;height:28px}.f3 .flask-neck{border-color:#ffd966;width:8px;height:12px}.f3 .flask-liquid{background:#c47f00}
+.f4{right:8%}.f4 .flask-body{border-color:#c39af0;color:#c39af0}.f4 .flask-neck{border-color:#c39af0}.f4 .flask-liquid{background:#6c3fc5;height:40%}
+.f5{right:18%}.f5 .flask-body{border-color:#f5b800;color:#f5b800;width:40px;height:50px}.f5 .flask-neck{border-color:#f5b800;width:15px;height:22px}.f5 .flask-liquid{background:#7a5200;height:70%}
+.bubble{position:absolute;border-radius:50%;animation:rise linear infinite;opacity:.15}
+@keyframes rise{0%{transform:translateY(0) scale(1);opacity:.2}100%{transform:translateY(-100vh) scale(.3);opacity:0}}
+.smoke{position:absolute;border-radius:50%;filter:blur(20px);animation:smokeRise 4s ease-out infinite;opacity:0}
+@keyframes smokeRise{0%{opacity:0;transform:translateY(0) scale(.5)}30%{opacity:.12}100%{opacity:0;transform:translateY(-200px) scale(2)}}
+.window-bg{position:absolute;top:20px;left:50%;transform:translateX(-50%);width:200px;height:260px;background:#0a0418;border:4px solid #2d1854;border-radius:100px 100px 0 0}
+.window-bg::before{content:'';position:absolute;inset:10px;background:radial-gradient(ellipse at 40% 30%,#1a0850 0%,#050110 100%);border-radius:90px 90px 0 0}
+.window-cross-h{position:absolute;top:50%;left:0;right:0;height:4px;background:#2d1854;transform:translateY(-50%)}
+.window-cross-v{position:absolute;left:50%;top:0;bottom:0;width:4px;background:#2d1854;transform:translateX(-50%)}
+.star{position:absolute;background:#fff;border-radius:50%;animation:twinkle ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:1}50%{opacity:.2}}
+.table-lab{position:absolute;bottom:130px;left:30%;right:30%;height:50px;background:#22103d;border:2px solid #3d2060;border-radius:4px 4px 0 0}
+.beaker{position:absolute;bottom:178px;left:50%;transform:translateX(-50%);width:50px;height:45px;border:2px solid #9b6de0;border-radius:0 0 8px 8px;overflow:hidden}
+.beaker::after{content:'';position:absolute;bottom:0;left:0;right:0;height:60%;background:rgba(245,184,0,.3);animation:beakerBubble 1.5s ease-in-out infinite}
+@keyframes beakerBubble{0%,100%{height:55%}50%{height:65%}}
+.particle{position:fixed;pointer-events:none;border-radius:50%;animation:float linear infinite;z-index:1}
+@keyframes float{0%{transform:translateY(100vh) rotate(0deg);opacity:0}10%{opacity:.6}90%{opacity:.3}100%{transform:translateY(-20px) rotate(720deg);opacity:0}}
+
+/* GAME */
+#game{position:relative;z-index:10;max-width:900px;margin:0 auto;padding:20px 16px 60px}
+
+/* HEADER */
+.lab-header{text-align:center;padding:26px 0 18px;border-bottom:1px solid #2d1854;margin-bottom:18px;position:relative}
+.lab-header::after{content:'';position:absolute;bottom:-1px;left:30%;right:30%;height:2px;background:var(--yellow-bright)}
+.title-main{font-family:'Cinzel',serif;font-size:clamp(17px,4vw,29px);font-weight:900;color:var(--yellow-bright);text-shadow:0 0 20px rgba(245,184,0,.5);letter-spacing:3px}
+.title-sub{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--violet-glow);margin-top:5px;letter-spacing:4px}
+
+/* HUD */
+.hud{display:flex;justify-content:space-between;align-items:center;background:var(--surface);border:1px solid #2d1854;border-top:2px solid var(--yellow-mid);border-radius:8px;padding:10px 16px;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.hud-item{text-align:center}
+.hud-label{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:2px;display:block;margin-bottom:2px}
+.hud-value{font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:var(--yellow-bright)}
+#timer.danger{color:#ff4444;animation:timerPulse .5s ease-in-out infinite}
+@keyframes timerPulse{0%,100%{opacity:1}50%{opacity:.5}}
+.clue-pills{display:flex;gap:5px;flex-wrap:wrap}
+.clue-pill{width:26px;height:26px;border-radius:50%;border:2px solid #2d1854;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .3s}
+.clue-pill.found{border-color:var(--yellow-bright);background:var(--yellow-dark);box-shadow:0 0 8px rgba(245,184,0,.4)}
+
+/* PHASE MAP */
+.phase-map{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:20px;flex-wrap:wrap}
+.phase-node{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;transition:transform .2s}
+.phase-node:hover:not(.locked) .phase-circle{filter:brightness(1.15)}
+.phase-node.locked{cursor:not-allowed;opacity:.4}
+.phase-circle{width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;border:3px solid;transition:all .3s}
+.phase-circle.available{border-color:var(--yellow-bright);background:#1a0d00;box-shadow:0 0 14px rgba(245,184,0,.35);animation:pulseBorder 2s ease-in-out infinite}
+@keyframes pulseBorder{0%,100%{box-shadow:0 0 14px rgba(245,184,0,.35)}50%{box-shadow:0 0 28px rgba(245,184,0,.65)}}
+.phase-circle.active-phase{border-color:var(--violet-bright);background:#160830;box-shadow:0 0 14px rgba(108,63,197,.4)}
+.phase-circle.done-phase{border-color:var(--green);background:var(--green-dark);box-shadow:0 0 12px rgba(29,184,110,.3)}
+.phase-circle.locked-c{border-color:#2d1854;background:#0d0520}
+.phase-label-node{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;text-align:center;line-height:1.4}
+.phase-label-node.clr-available{color:var(--yellow-bright)}
+.phase-label-node.clr-active{color:var(--violet-glow)}
+.phase-label-node.clr-done{color:var(--green)}
+.phase-label-node.clr-locked{color:#3d2060}
+.phase-conn{width:34px;height:3px;margin-bottom:22px}
+.phase-conn.conn-done{background:var(--green)}
+.phase-conn.conn-active{background:var(--yellow-mid)}
+.phase-conn.conn-locked{background:#2d1854}
+
+/* PHASE PANELS */
+.phase-panel{display:none;animation:fadeUp .3s ease}
+.phase-panel.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* PHASE HEADER */
+.phase-hdr{display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:10px;margin-bottom:14px;border:1px solid}
+.phase-hdr.easy{border-color:#2db86e;background:#071c0f}
+.phase-hdr.medium{border-color:var(--yellow-mid);background:#1a0d00}
+.phase-hdr.hard{border-color:#cc4400;background:#1a0800}
+.phase-hdr.final-ph{border-color:var(--violet-bright);background:#0d0520}
+.phase-badge{font-family:'Cinzel',serif;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:1px;white-space:nowrap}
+.b-easy{background:#0d3d22;color:#2db86e;border:1px solid #2db86e}
+.b-medium{background:#2a1500;color:var(--yellow-bright);border:1px solid var(--yellow-mid)}
+.b-hard{background:#2a0800;color:#ff7733;border:1px solid #cc4400}
+.b-final{background:#160830;color:var(--violet-glow);border:1px solid var(--violet-bright)}
+.phase-hdr-txt h3{font-family:'Cinzel',serif;font-size:14px;font-weight:700}
+.phase-hdr-txt p{font-size:13px;color:var(--text-dim);margin-top:2px}
+
+/* CARDS */
+.challenge-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:13px;margin-bottom:18px}
+.challenge-card{background:var(--surface);border:1px solid #2d1854;border-radius:12px;padding:17px;cursor:pointer;transition:all .3s;position:relative;overflow:hidden}
+.challenge-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.cc-e::before{background:#2db86e}.cc-m::before{background:var(--yellow-bright)}.cc-h::before{background:#ff7733}.cc-f::before{background:var(--violet-bright)}
+.challenge-card:hover{border-color:var(--violet-bright);transform:translateY(-3px);box-shadow:0 8px 24px rgba(108,63,197,.25)}
+.challenge-card.solved{border-color:var(--yellow-bright);background:linear-gradient(135deg,var(--surface) 0%,#1a0d00 100%)}
+.challenge-card.solved:hover{transform:none}
+.card-icon{font-size:27px;margin-bottom:7px;display:block}
+.card-num{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:2px;margin-bottom:3px}
+.card-title{font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:var(--yellow-light);margin-bottom:5px;line-height:1.3}
+.card-desc{font-size:13px;color:var(--text-dim);line-height:1.5}
+.card-status{margin-top:9px;font-family:'Share Tech Mono',monospace;font-size:10px;padding:3px 10px;border-radius:20px;display:inline-block}
+.st-open{background:#1a0a2e;color:var(--violet-glow);border:1px solid var(--violet-bright)}
+.st-solved{background:#1a0d00;color:var(--yellow-bright);border:1px solid var(--yellow-mid)}
+
+/* SECTION DIVIDER */
+.sdiv{display:flex;align-items:center;gap:10px;margin:6px 0 13px}
+.sdiv span{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:3px;white-space:nowrap}
+.sdiv::before,.sdiv::after{content:'';flex:1;height:1px;background:linear-gradient(to right,transparent,#2d1854)}
+.sdiv::after{background:linear-gradient(to left,transparent,#2d1854)}
+
+/* PHASE COMPLETE */
+.phase-complete{display:none;background:linear-gradient(135deg,#071c0f,#0d0520);border:2px solid var(--green);border-radius:12px;padding:18px;text-align:center;margin-top:8px}
+.phase-complete.show{display:block;animation:glowIn .5s ease}
+@keyframes glowIn{0%{box-shadow:none}100%{box-shadow:0 0 20px rgba(29,184,110,.3)}}
+.phase-complete h3{font-family:'Cinzel',serif;font-size:15px;color:#2db86e;margin-bottom:6px}
+.phase-complete p{font-size:14px;color:var(--text-dim);margin-bottom:14px}
+.btn-next{background:var(--yellow-mid);border:none;border-radius:8px;color:var(--violet-dark);cursor:pointer;padding:10px 26px;font-family:'Cinzel',serif;font-size:14px;font-weight:900;transition:all .2s}
+.btn-next:hover{background:var(--yellow-bright)}
+.digit-reveal-box{background:linear-gradient(135deg,#2a1500,#1a0a2e);border:2px solid var(--yellow-bright);border-radius:10px;padding:14px;margin-bottom:14px}
+.digit-reveal-box .dr-label{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:3px;margin-bottom:4px}
+.digit-reveal-box .dr-num{font-family:'Cinzel',serif;font-size:56px;font-weight:900;color:var(--yellow-bright);text-shadow:0 0 24px rgba(245,184,0,.6);line-height:1}
+.digit-reveal-box .dr-note{font-size:13px;color:var(--text-dim);margin-top:5px}
+
+/* FINAL BOX */
+.final-box{background:var(--surface);border:1px solid var(--violet-bright);border-radius:14px;padding:22px}
+.final-title{font-family:'Cinzel',serif;font-size:16px;font-weight:700;color:var(--yellow-bright);text-align:center;margin-bottom:5px}
+.final-subtitle{text-align:center;font-size:14px;color:var(--text-dim);margin-bottom:16px}
+.code-hint-row{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:18px;padding:13px;background:var(--surface2);border-radius:10px;border:1px dashed #2d1854}
+.code-hint-slot{display:flex;flex-direction:column;align-items:center;gap:4px}
+.code-hint-label{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:1px}
+.code-hint-icon{font-size:18px}
+.code-hint-blank{font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:#2d1854;letter-spacing:6px;border-bottom:2px solid #3d2060;padding:0 4px}
+.code-hint-sep{font-size:18px;color:#2d1854;margin-top:16px}
+.final-input-row{display:flex;gap:10px;max-width:320px;margin:0 auto}
+.final-input{flex:1;background:var(--surface2);border:1px solid #2d1854;border-radius:8px;padding:11px 14px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:20px;text-align:center;outline:none;letter-spacing:8px;transition:border-color .2s}
+.final-input:focus{border-color:var(--violet-bright)}
+.btn-final{background:var(--yellow-mid);border:none;border-radius:8px;color:var(--violet-dark);cursor:pointer;padding:11px 18px;font-family:'Cinzel',serif;font-size:14px;font-weight:900;transition:all .2s}
+.btn-final:hover{background:var(--yellow-bright)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;z-index:100;background:rgba(10,4,24,.92);display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeUp .2s ease}
+.modal{background:var(--surface);border:1px solid var(--violet-bright);border-top:3px solid var(--yellow-bright);border-radius:16px;padding:24px;max-width:560px;width:100%;max-height:90vh;overflow-y:auto;position:relative;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(28px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-close{position:absolute;top:13px;right:13px;background:none;border:1px solid #2d1854;color:var(--text-dim);cursor:pointer;width:28px;height:28px;border-radius:50%;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.modal-close:hover{border-color:var(--yellow-bright);color:var(--yellow-bright)}
+.modal-icon{font-size:34px;text-align:center;margin-bottom:8px}
+.modal-title{font-family:'Cinzel',serif;font-size:16px;font-weight:700;color:var(--yellow-bright);text-align:center;margin-bottom:4px}
+.modal-subtitle{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--violet-glow);text-align:center;letter-spacing:3px;margin-bottom:16px}
+.problem-box{background:var(--surface2);border:1px solid #2d1854;border-left:3px solid var(--violet-bright);border-radius:8px;padding:13px;margin-bottom:14px;font-size:14px;line-height:1.75;color:var(--text)}
+.problem-box strong{color:var(--yellow-light)}
+.problem-box .formula{font-family:'Share Tech Mono',monospace;background:#0d0520;padding:7px 12px;border-radius:6px;display:inline-block;margin:5px 0;color:var(--violet-glow);border:1px solid #2d1854;font-size:13px}
+.mc-option{display:flex;align-items:flex-start;gap:10px;padding:10px 13px;border-radius:8px;border:1px solid #2d1854;margin-bottom:8px;cursor:pointer;transition:all .2s;font-size:14px;line-height:1.5}
+.mc-option:hover{border-color:var(--violet-bright);background:#1a0838}
+.mc-option.selected{border-color:var(--violet-bright);background:#1a0838}
+.mc-option.correct-ans{border-color:var(--green);background:var(--green-dark);color:#2db86e;pointer-events:none}
+.mc-option.wrong-ans{border-color:var(--red);background:#1a0000;color:#ff6666}
+.mc-letter{font-family:'Cinzel',serif;font-weight:700;color:var(--yellow-bright);min-width:18px}
+.hint-section{background:#1a0a2e;border:1px dashed #2d1854;border-radius:8px;padding:11px;margin-bottom:14px}
+.hint-toggle{background:none;border:none;color:var(--violet-glow);cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:1px;display:flex;align-items:center;gap:5px}
+.hint-toggle:hover{color:var(--yellow-bright)}
+.hint-content{margin-top:9px;font-size:14px;color:var(--text-dim);line-height:1.7;display:none}
+.hint-content.show{display:block}
+.answer-row{display:flex;gap:10px;align-items:center;margin-bottom:9px}
+.answer-input{flex:1;background:var(--surface2);border:1px solid #2d1854;border-radius:8px;padding:11px 13px;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:16px;outline:none;transition:border-color .2s}
+.answer-input:focus{border-color:var(--violet-bright)}
+.answer-input.correct{border-color:var(--yellow-bright);background:#1a0d00;color:var(--yellow-bright)}
+.answer-input.wrong{border-color:#cc2222;background:#1a0000;animation:shake .3s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.btn-check{background:var(--violet-bright);border:none;border-radius:8px;color:#fff;cursor:pointer;padding:11px 16px;font-family:'Cinzel',serif;font-size:13px;font-weight:700;transition:all .2s}
+.btn-check:hover{background:var(--violet-light)}
+.btn-check-mc{width:100%;padding:11px;font-family:'Cinzel',serif;font-size:13px;font-weight:700;background:var(--violet-bright);border:none;border-radius:8px;color:#fff;cursor:pointer;transition:all .2s;margin-bottom:9px}
+.btn-check-mc:hover{background:var(--violet-light)}
+.feedback-msg{font-family:'Share Tech Mono',monospace;font-size:12px;padding:8px 12px;border-radius:6px;margin-top:6px;display:none}
+.feedback-msg.ok{display:block;background:#1a0d00;color:var(--yellow-bright);border:1px solid var(--yellow-mid)}
+.feedback-msg.err{display:block;background:#1a0000;color:#ff6666;border:1px solid #441111}
+.clue-reveal-modal{background:linear-gradient(135deg,#2a1500,#1a0a2e);border:2px solid var(--yellow-bright);border-radius:10px;padding:13px;margin-top:13px;text-align:center;display:none}
+.clue-reveal-modal.show{display:block;animation:glowIn .5s ease}
+@keyframes glowIn{0%{box-shadow:none}100%{box-shadow:0 0 20px rgba(245,184,0,.4)}}
+.cr-label{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:3px;margin-bottom:3px}
+.cr-digit{font-family:'Cinzel',serif;font-size:46px;font-weight:900;color:var(--yellow-bright);text-shadow:0 0 18px rgba(245,184,0,.6)}
+.cr-text{font-size:13px;color:var(--text-dim);margin-top:4px}
+
+/* INTRO */
+.intro-text{background:var(--surface);border:1px solid #2d1854;border-left:3px solid var(--yellow-mid);border-radius:8px;padding:11px 15px;font-size:14px;line-height:1.8;color:var(--text-dim);margin-bottom:17px;font-style:italic}
+
+/* WIN */
+#win-screen{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.95);flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px}
+#win-screen.show{display:flex}
+.win-icon{font-size:70px;margin-bottom:14px;animation:bounce .8s ease infinite alternate}
+@keyframes bounce{from{transform:translateY(0)}to{transform:translateY(-16px)}}
+.win-title{font-family:'Cinzel',serif;font-size:clamp(22px,5vw,44px);font-weight:900;color:var(--yellow-bright);text-shadow:0 0 30px rgba(245,184,0,.6);margin-bottom:8px}
+.win-sub{font-size:17px;color:var(--violet-glow);margin-bottom:14px}
+.win-time{font-family:'Share Tech Mono',monospace;font-size:15px;color:var(--text-dim)}
+.confetti-piece{position:fixed;pointer-events:none;animation:confettiFall linear forwards;z-index:201}
+@keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}
+.btn-restart{margin-top:18px;background:var(--violet-mid);border:2px solid var(--violet-bright);color:var(--text);cursor:pointer;padding:11px 26px;border-radius:8px;font-family:'Cinzel',serif;font-size:14px;font-weight:700;transition:all .2s}
+.btn-restart:hover{background:var(--violet-bright)}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--violet-mid);border-radius:3px}
+@media(max-width:480px){.challenge-grid{grid-template-columns:1fr}.final-input-row{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<!-- LAB BG -->
+<div id="lab-bg">
+  <div class="window-bg"><div class="window-cross-h"></div><div class="window-cross-v"></div></div>
+  <div class="flask f1 flask-glow"><div class="flask-neck"></div><div class="flask-body"><div class="flask-liquid"></div></div></div>
+  <div class="flask f2 flask-glow"><div class="flask-neck"></div><div class="flask-body"><div class="flask-liquid"></div></div></div>
+  <div class="flask f3"><div class="flask-neck"></div><div class="flask-body"><div class="flask-liquid"></div></div></div>
+  <div class="flask f4 flask-glow"><div class="flask-neck"></div><div class="flask-body"><div class="flask-liquid"></div></div></div>
+  <div class="flask f5"><div class="flask-neck"></div><div class="flask-body"><div class="flask-liquid"></div></div></div>
+  <div class="table-lab"><div class="beaker"></div></div>
+  <div class="shelf-plank"></div><div class="lab-shelf"></div>
+</div>
+
+<!-- GAME -->
+<div id="game">
+  <div class="lab-header">
+    <div class="title-main">⚗️ LABORATÓRIO SECRETO</div>
+    <div class="title-sub">ESCAPE ROOM · QUÍMICA · 4 FASES</div>
+  </div>
+
+  <div class="hud">
+    <div class="hud-item"><span class="hud-label">⏱ Tempo</span><span class="hud-value" id="timer">30:00</span></div>
+    <div class="hud-item"><span class="hud-label">📍 Fase</span><span class="hud-value" id="phase-ind">1 / 4</span></div>
+    <div class="hud-item">
+      <span class="hud-label">✅ Fases concluídas</span>
+      <div class="clue-pills" id="clue-pills">
+        <div class="clue-pill" id="pill-0">1</div>
+        <div class="clue-pill" id="pill-1">2</div>
+        <div class="clue-pill" id="pill-2">3</div>
+        <div class="clue-pill" id="pill-3">4</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE MAP -->
+  <div class="phase-map" id="phase-map">
+    <div class="phase-node" id="pnode-0" onclick="switchPhase(0)">
+      <div class="phase-circle available" id="pcircle-0">🌱</div>
+      <div class="phase-label-node clr-available" id="plabel-0">FASE 1<br>Fácil</div>
+    </div>
+    <div class="phase-conn conn-locked" id="conn-0"></div>
+    <div class="phase-node locked" id="pnode-1" onclick="switchPhase(1)">
+      <div class="phase-circle locked-c" id="pcircle-1">🔒</div>
+      <div class="phase-label-node clr-locked" id="plabel-1">FASE 2<br>Médio</div>
+    </div>
+    <div class="phase-conn conn-locked" id="conn-1"></div>
+    <div class="phase-node locked" id="pnode-2" onclick="switchPhase(2)">
+      <div class="phase-circle locked-c" id="pcircle-2">🔒</div>
+      <div class="phase-label-node clr-locked" id="plabel-2">FASE 3<br>Difícil</div>
+    </div>
+    <div class="phase-conn conn-locked" id="conn-2"></div>
+    <div class="phase-node locked" id="pnode-3" onclick="switchPhase(3)">
+      <div class="phase-circle locked-c" id="pcircle-3">🔒</div>
+      <div class="phase-label-node clr-locked" id="plabel-3">FASE 4<br>Final</div>
+    </div>
+  </div>
+
+  <div class="intro-text">"O Prof. Magnus dividiu os segredos do laboratório em <strong>4 fases de dificuldade crescente</strong>. Conclua todos os desafios de cada fase para revelar o dígito e avançar. Anote cada dígito — você vai precisar de todos para abrir o cofre."</div>
+
+  <!-- FASE 1 -->
+  <div class="phase-panel active" id="phase-0">
+    <div class="phase-hdr easy"><span class="phase-badge b-easy">FASE 1 · FÁCIL</span><div class="phase-hdr-txt"><h3>🌱 Primeiros Passos</h3><p>Conceitos básicos de gases, proporção estequiométrica e massa molar</p></div></div>
+    <div class="sdiv"><span>DESAFIOS DA FASE 1</span></div>
+    <div class="challenge-grid">
+      <div class="challenge-card cc-e" id="card-0-0" onclick="openChallenge(0,0)"><span class="card-icon">🌡️</span><div class="card-num">F1 · DESAFIO 01</div><div class="card-title">O Balão que Dobrou</div><div class="card-desc">A temperatura dobrou — o que acontece com o volume? Lei de Charles.</div><span class="card-status st-open" id="st-0-0">◉ DISPONÍVEL</span></div>
+      <div class="challenge-card cc-e" id="card-0-1" onclick="openChallenge(0,1)"><span class="card-icon">💧</span><div class="card-num">F1 · DESAFIO 02</div><div class="card-title">A Receita da Água</div><div class="card-desc">Use a equação de formação da água para calcular os mols de H₂O produzidos.</div><span class="card-status st-open" id="st-0-1">◉ DISPONÍVEL</span></div>
+      <div class="challenge-card cc-e" id="card-0-2" onclick="openChallenge(0,2)"><span class="card-icon">📖</span><div class="card-num">F1 · DESAFIO 03</div><div class="card-title">O Diário do Prof. Magnus</div><div class="card-desc">Quatro afirmativas sobre gases — apenas uma está certa. Interprete!</div><span class="card-status st-open" id="st-0-2">◉ DISPONÍVEL</span></div>
+      <div class="challenge-card cc-e" id="card-0-3" onclick="openChallenge(0,3)"><span class="card-icon">🧪</span><div class="card-num">F1 · DESAFIO 04</div><div class="card-title">Quantos Mols no Frasco?</div><div class="card-desc">Dada a massa de CO₂, calcule o número de mols usando a massa molar.</div><span class="card-status st-open" id="st-0-3">◉ DISPONÍVEL</span></div>
+    </div>
+    <div class="phase-complete" id="complete-0"><h3>✅ Fase 1 concluída!</h3><p>Anote o dígito acima! A próxima fase exige mais raciocínio.</p><button class="btn-next" onclick="unlockPhase(1)">Avançar para Fase 2 →</button></div>
+  </div>
+
+  <!-- FASE 2 -->
+  <div class="phase-panel" id="phase-1">
+    <div class="phase-hdr medium"><span class="phase-badge b-medium">FASE 2 · MÉDIO</span><div class="phase-hdr-txt"><h3>⚗️ O Laboratório Esquentou</h3><p>Cálculos em duas etapas e múltipla escolha conceitual</p></div></div>
+    <div class="sdiv"><span>DESAFIOS DA FASE 2</span></div>
+    <div class="challenge-grid">
+      <div class="challenge-card cc-m" id="card-1-0" onclick="openChallenge(1,0)"><span class="card-icon">🔥</span><div class="card-num">F2 · DESAFIO 01</div><div class="card-title">Combustão do Metano</div><div class="card-desc">Quantos mols de O₂ são necessários para queimar 3 mol de CH₄?</div><span class="card-status st-open" id="st-1-0">◉ DISPONÍVEL</span></div>
+      <div class="challenge-card cc-m" id="card-1-1" onclick="openChallenge(1,1)"><span class="card-icon">📊</span><div class="card-num">F2 · DESAFIO 02</div><div class="card-title">Pressão e Volume</div><div class="card-desc">Múltipla escolha: o que ocorre com a pressão quando o volume é reduzido à metade?</div><span class="card-status st-open" id="st-1-1">◉ DISPONÍVEL</span></div>
+      <div class="challenge-card cc-m" id="card-1-2" onclick="openChallenge(1,2)"><span class="card-icon">⚖️</span><div class="card-num">F2 · DESAFIO 03</div><div class="card-title">Massa de Produto</div><div class="card-desc">Calcule a massa de H₂O formada a partir de 4 mol de H₂.</div><span class="card-status st-open" id="st-1-2">◉ DISPONÍVEL</span></div>
+      <div class="challenge-card cc-m" id="card-1-3" onclick="openChallenge(1,3)"><span class="card-icon">🌡️</span><div class="card-num">F2 · DESAFIO 04</div><div class="card-title">Lei de Gay-Lussac</div><div class="card-desc">A pressão dobrou com volume constante — o que aconteceu com a temperatura?</div><span class="card-status st-open" id="st-1-3">◉ DISPONÍVEL</span></div>
+    </div>
+    <div class="phase-complete" id="complete-1"><h3>✅ Fase 2 concluída!</h3><p>Ótimo! Anote o dígito. A próxima fase traz equações para balancear!</p><button class="btn-next" onclick="unlockPhase(2)">Avançar para Fase 3 →</button></div>
+  </div>
+
+  <!-- FASE 3 -->
+  <div class="phase-panel" id="phase-2">
+    <div class="phase-hdr hard"><span class="phase-badge b-hard">FASE 3 · DIFÍCIL</span><div class="phase-hdr-txt"><h3>🔴 Alarme no Laboratório</h3><p>Balanceamento de equações, reagente limitante e múltipla escolha avançada</p></div></div>
+    <div class="sdiv"><span>DESAFIOS DA FASE 3</span></div>
+    <div class="challenge-grid">
+      <div class="challenge-card cc-h" id="card-2-0" onclick="openChallenge(2,0)"><span class="card-icon">⚖️</span><div class="card-num">F3 · DESAFIO 01</div><div class="card-title">Balanceie: Óxido de Ferro</div><div class="card-desc">Qual é o coeficiente do Fe na equação de formação do Fe₂O₃?</div><span class="card-status st-open" id="st-2-0">◉ DISPONÍVEL</span></div>
+      <div class="challenge-card cc-h" id="card-2-1" onclick="openChallenge(2,1)"><span class="card-icon">🧠</span><div class="card-num">F3 · DESAFIO 02</div><div class="card-title">Gases Reais — Múltipla Escolha</div><div class="card-desc">Qual afirmativa descreve corretamente o comportamento dos gases reais?</div><span class="card-status st-open" id="st-2-1">◉ DISPONÍVEL</span></div>
+      <div class="challenge-card cc-h" id="card-2-2" onclick="openChallenge(2,2)"><span class="card-icon">⚗️</span><div class="card-num">F3 · DESAFIO 03</div><div class="card-title">Reagente Limitante: Amônia</div><div class="card-desc">Com 2 mol N₂ e 3 mol H₂, qual se esgota primeiro? Calcule os mols de NH₃.</div><span class="card-status st-open" id="st-2-2">◉ DISPONÍVEL</span></div>
+      <div class="challenge-card cc-h" id="card-2-3" onclick="openChallenge(2,3)"><span class="card-icon">🔬</span><div class="card-num">F3 · DESAFIO 04</div><div class="card-title">Balanceie: Combustão do Propano</div><div class="card-desc">Qual é o coeficiente do O₂ na combustão completa do C₃H₈?</div><span class="card-status st-open" id="st-2-3">◉ DISPONÍVEL</span></div>
+    </div>
+    <div class="phase-complete" id="complete-2"><h3>✅ Fase 3 concluída!</h3><p>Impressionante! Anote o dígito. O desafio final exige tudo que você aprendeu!</p><button class="btn-next" onclick="unlockPhase(3)">Avançar para Fase Final →</button></div>
+  </div>
+
+  <!-- FASE 4 -->
+  <div class="phase-panel" id="phase-3">
+    <div class="phase-hdr final-ph"><span class="phase-badge b-final">FASE 4 · DESAFIO FINAL</span><div class="phase-hdr-txt"><h3>🔮 O Cofre do Prof. Magnus</h3><p>Problemas integrados: Lei Geral, neutralização, balanceamento e reagente limitante</p></div></div>
+    <div class="sdiv"><span>DESAFIOS DA FASE FINAL</span></div>
+    <div class="challenge-grid">
+      <div class="challenge-card cc-f" id="card-3-0" onclick="openChallenge(3,0)"><span class="card-icon">🏆</span><div class="card-num">FINAL · DESAFIO 01</div><div class="card-title">Lei Geral dos Gases</div><div class="card-desc">Use P₁V₁/T₁ = P₂V₂/T₂ para calcular o volume final após mudanças de P e T.</div><span class="card-status st-open" id="st-3-0">◉ DISPONÍVEL</span></div>
+      <div class="challenge-card cc-f" id="card-3-1" onclick="openChallenge(3,1)"><span class="card-icon">🎯</span><div class="card-num">FINAL · DESAFIO 02</div><div class="card-title">Neutralização — Múltipla Escolha</div><div class="card-desc">Qual equação representa corretamente a neutralização entre HCl e NaOH?</div><span class="card-status st-open" id="st-3-1">◉ DISPONÍVEL</span></div>
+      <div class="challenge-card cc-f" id="card-3-2" onclick="openChallenge(3,2)"><span class="card-icon">⚡</span><div class="card-num">FINAL · DESAFIO 03</div><div class="card-title">Balanceie: Cloreto de Ferro III</div><div class="card-desc">Determine o coeficiente do Cl₂ na reação 2 Fe + __ Cl₂ → 2 FeCl₃.</div><span class="card-status st-open" id="st-3-2">◉ DISPONÍVEL</span></div>
+      <div class="challenge-card cc-f" id="card-3-3" onclick="openChallenge(3,3)"><span class="card-icon">🔐</span><div class="card-num">FINAL · DESAFIO 04</div><div class="card-title">O Experimento Integrado</div><div class="card-desc">Identifique o reagente limitante e calcule os mols de H₂O produzidos.</div><span class="card-status st-open" id="st-3-3">◉ DISPONÍVEL</span></div>
+    </div>
+    <div class="phase-complete" id="complete-3"><h3>✅ Todas as fases concluídas!</h3><p>Você coletou os 4 dígitos. Agora abra o cofre!</p></div>
+  </div>
+
+  <!-- COFRE FINAL -->
+  <div class="sdiv" style="margin-top:22px"><span>COFRE FINAL</span></div>
+  <div class="final-box">
+    <div class="final-title">🔐 COFRE DO LABORATÓRIO</div>
+    <div class="final-subtitle">Anote o dígito revelado ao concluir cada fase e forme o código de 4 dígitos</div>
+    <div class="code-hint-row">
+      <div class="code-hint-slot"><span class="code-hint-label">Fase 1</span><span class="code-hint-icon">🌱</span><span class="code-hint-blank">__</span></div>
+      <div class="code-hint-sep">—</div>
+      <div class="code-hint-slot"><span class="code-hint-label">Fase 2</span><span class="code-hint-icon">⚗️</span><span class="code-hint-blank">__</span></div>
+      <div class="code-hint-sep">—</div>
+      <div class="code-hint-slot"><span class="code-hint-label">Fase 3</span><span class="code-hint-icon">🔴</span><span class="code-hint-blank">__</span></div>
+      <div class="code-hint-sep">—</div>
+      <div class="code-hint-slot"><span class="code-hint-label">Fase 4</span><span class="code-hint-icon">🔮</span><span class="code-hint-blank">__</span></div>
+    </div>
+    <div class="final-input-row">
+      <input type="text" class="final-input" id="final-input" maxlength="4" placeholder="????">
+      <button class="btn-final" onclick="checkFinal()">ABRIR</button>
+    </div>
+    <p id="final-feedback" style="text-align:center;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:12px;color:#cc2222;display:none;"></p>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modal-overlay" style="display:none;">
+  <div class="modal-overlay" onclick="closeModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div id="modal-inner"></div>
+    </div>
+  </div>
+</div>
+
+<!-- WIN -->
+<div id="win-screen">
+  <div class="win-icon">🏆</div>
+  <div class="win-title">LABORATÓRIO SALVO!</div>
+  <div class="win-sub">Você dominou todas as 4 fases do Prof. Magnus!</div>
+  <div class="win-time" id="win-time-display"></div>
+  <button class="btn-restart" onclick="restartGame()">↺ Jogar Novamente</button>
+</div>
+
+<script>
+// ── AUDIO ──
+const AudioCtx=window.AudioContext||window.webkitAudioContext;let ctx;
+function initAudio(){if(ctx)return;ctx=new AudioCtx();playAmbientLoop();}
+function playTone(freq,type,dur,vol,delay=0){if(!ctx)return;const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(0,ctx.currentTime+delay);g.gain.linearRampToValueAtTime(vol,ctx.currentTime+delay+0.05);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+delay+dur);o.start(ctx.currentTime+delay);o.stop(ctx.currentTime+delay+dur+0.1);}
+function playAmbientLoop(){if(!ctx)return;[55,58,61,65,69,73,65,58].forEach((f,i)=>{playTone(f,'sine',2.5,.04,i*1.2);playTone(f*2,'triangle',1.8,.02,i*1.2+0.6);});const d=ctx.createOscillator(),dg=ctx.createGain();d.connect(dg);dg.connect(ctx.destination);d.type='sawtooth';d.frequency.value=27.5;dg.gain.setValueAtTime(.015,ctx.currentTime);d.start();d.stop(ctx.currentTime+10);setTimeout(playAmbientLoop,9600);}
+function playSuccess(){[523,659,784,1047].forEach((f,i)=>playTone(f,'sine',.4,.12,i*.12));}
+function playError(){playTone(180,'sawtooth',.3,.1);playTone(160,'sawtooth',.3,.08,.15);}
+function playUnlock(){[392,523,659,784].forEach((f,i)=>playTone(f,'triangle',.35,.1,i*.1));}
+function playWin(){[523,659,784,1047,784,659,523,784,1047,1568].forEach((f,i)=>playTone(f,'sine',.5,.15,i*.18));}
+document.body.addEventListener('click',initAudio,{once:true});
+
+// ── BG FX ──
+(function(){
+  const bg=document.getElementById('lab-bg');
+  for(let i=0;i<18;i++){const b=document.createElement('div');b.className='bubble';const s=Math.random()*12+4;b.style.cssText=`width:${s}px;height:${s}px;left:${Math.random()*100}%;bottom:${Math.random()*20}%;background:${Math.random()>.5?'#f5b800':'#9b6de0'};animation-duration:${Math.random()*6+4}s;animation-delay:${Math.random()*4}s;`;bg.appendChild(b);}
+  [10,45,85].forEach(x=>{const s=document.createElement('div');s.className='smoke';s.style.cssText=`width:60px;height:60px;left:${x}%;bottom:165px;background:#6c3fc5;animation-delay:${Math.random()*3}s;`;bg.appendChild(s);});
+  const win=document.querySelector('.window-bg');for(let i=0;i<30;i++){const s=document.createElement('div');s.className='star';const sz=Math.random()*2+1;s.style.cssText=`width:${sz}px;height:${sz}px;left:${15+Math.random()*70}%;top:${8+Math.random()*45}%;animation-duration:${Math.random()*2+1}s;animation-delay:${Math.random()*2}s;`;win.appendChild(s);}
+  const colors=['#f5b800','#9b6de0','#ffd966','#c39af0','#c47f00'];for(let i=0;i<20;i++){const p=document.createElement('div');p.className='particle';const sz=Math.random()*5+2;p.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;background:${colors[Math.floor(Math.random()*colors.length)]};animation-duration:${Math.random()*12+8}s;animation-delay:${Math.random()*10}s;`;document.body.appendChild(p);}
+})();
+
+// ── STATE ──
+let currentPhase=0,secondsLeft=1800;
+const phaseSolved=[[false,false,false,false],[false,false,false,false],[false,false,false,false],[false,false,false,false]];
+const phaseComplete=[false,false,false,false];
+const phaseUnlocked=[true,false,false,false];
+const phaseDigits=['7','3','5','9'];
+const finalCode='7359';
+let mcSelected=null;
+
+// ── TIMER ──
+const timerInterval=setInterval(()=>{
+  secondsLeft--;
+  const m=Math.floor(secondsLeft/60),s=secondsLeft%60;
+  const el=document.getElementById('timer');
+  el.textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  if(secondsLeft<=60)el.classList.add('danger');
+  if(secondsLeft<=0){clearInterval(timerInterval);alert('⏰ Tempo esgotado!');restartGame();}
+},1000);
+
+// ── PHASE NAV ──
+function switchPhase(idx){
+  if(!phaseUnlocked[idx])return;
+  currentPhase=idx;
+  document.querySelectorAll('.phase-panel').forEach((p,i)=>p.classList.toggle('active',i===idx));
+  document.getElementById('phase-ind').textContent=`${idx+1} / 4`;
+  updateMap();
+}
+function unlockPhase(idx){
+  if(idx>3)return;
+  phaseUnlocked[idx]=true;
+  playUnlock();
+  updateMap();
+  switchPhase(idx);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+const icons=['🌱','⚗️','🔴','🔮'],names=['FASE 1<br>Fácil','FASE 2<br>Médio','FASE 3<br>Difícil','FASE 4<br>Final'];
+function updateMap(){
+  for(let i=0;i<4;i++){
+    const node=document.getElementById(`pnode-${i}`);
+    const circle=document.getElementById(`pcircle-${i}`);
+    const label=document.getElementById(`plabel-${i}`);
+    node.classList.toggle('locked',!phaseUnlocked[i]);
+    circle.className='phase-circle';label.className='phase-label-node';
+    if(phaseComplete[i]){circle.className+=' done-phase';circle.textContent='✅';label.className+=' clr-done';}
+    else if(i===currentPhase&&phaseUnlocked[i]){circle.className+=' active-phase';circle.textContent=icons[i];label.className+=' clr-active';}
+    else if(phaseUnlocked[i]){circle.className+=' available';circle.textContent=icons[i];label.className+=' clr-available';}
+    else{circle.className+=' locked-c';circle.textContent='🔒';label.className+=' clr-locked';}
+    label.innerHTML=names[i];
+    if(i<3){const c=document.getElementById(`conn-${i}`);c.className='phase-conn '+(phaseComplete[i]?'conn-done':phaseUnlocked[i+1]?'conn-active':'conn-locked');}
+  }
+}
+
+// ── CHALLENGES ──
+const CH=[
+  // FASE 1
+  [
+    {icon:'🌡️',title:'O Balão que Dobrou',sub:'LEI DE CHARLES',type:'num',
+     problem:`<p>Um balão tem <strong>2 litros</strong> a <strong>300 K</strong>. Aquecido até <strong>600 K</strong> com pressão constante.</p><br><div class="formula">V₁/T₁ = V₂/T₂</div><br><p>A temperatura dobrou. Qual o <strong>volume final V₂</strong> em litros?</p>`,
+     hint:`V₂ = V₁ × (T₂/T₁) = 2 × (600/300) = <strong>4 litros</strong>`,answer:'4',unit:'litros'},
+    {icon:'💧',title:'A Receita da Água',sub:'ESTEQUIOMETRIA SIMPLES',type:'num',
+     problem:`<p>Formação da água:</p><br><div class="formula">2 H₂ + O₂ → 2 H₂O</div><br><p>Proporção 1:1 — 2 mol H₂ → 2 mol H₂O.</p><br><p>Com <strong>6 mol de H₂</strong>, quantos <strong>mols de H₂O</strong> serão produzidos?</p>`,
+     hint:`6 mol H₂ × 1 = <strong>6 mol H₂O</strong>`,answer:'6',unit:'mol de H₂O'},
+    {icon:'📖',title:'O Diário do Prof. Magnus',sub:'PROPRIEDADES DOS GASES',type:'mc',
+     problem:`<p>Apenas <strong>uma afirmativa</strong> está correta. Qual?</p><br><p><strong>(A)</strong> Gases têm volume fixo e não se expandem para preencher o recipiente.</p><br><p><strong>(B)</strong> Maior temperatura significa menor velocidade das moléculas.</p><br><p><strong>(C)</strong> Em CNTP, 1 mol de qualquer gás ideal ocupa o mesmo volume.</p><br><p><strong>(D)</strong> A pressão aumenta quando o volume do recipiente aumenta com T constante.</p>`,
+     hint:`❌A: gases expandem. ❌B: maior T = maior velocidade. ✅<strong>C: correto</strong> — 22,4 L/mol em CNTP. ❌D: maior V = menor P (Boyle).`,
+     options:['(A) Gases têm volume fixo','(B) Maior T = menor velocidade','(C) 1 mol = mesmo volume em CNTP','(D) Maior volume = maior pressão'],answer:'2',unit:''},
+    {icon:'🧪',title:'Quantos Mols no Frasco?',sub:'MASSA MOLAR',type:'num',
+     problem:`<p>Massa molar do CO₂:</p><br><div class="formula">CO₂ = 12 + 2×16 = 44 g/mol</div><br><p>O frasco tem <strong>88 g de CO₂</strong>.</p><br><div class="formula">n = massa ÷ massa molar</div><br><p>Quantos <strong>mols</strong> há no frasco?</p>`,
+     hint:`n = 88 ÷ 44 = <strong>2 mol</strong>`,answer:'2',unit:'mol de CO₂'}
+  ],
+  // FASE 2
+  [
+    {icon:'🔥',title:'Combustão do Metano',sub:'ESTEQUIOMETRIA — 2 ETAPAS',type:'num',
+     problem:`<p>Combustão completa do metano:</p><br><div class="formula">CH₄ + 2 O₂ → CO₂ + 2 H₂O</div><br><p>Proporção: 1 mol CH₄ → 2 mol O₂.</p><br><p>Para queimar <strong>3 mol de CH₄</strong>, quantos <strong>mols de O₂</strong> são necessários?</p>`,
+     hint:`3 × 2 = <strong>6 mol de O₂</strong>`,answer:'6',unit:'mol de O₂'},
+    {icon:'📊',title:'Pressão e Volume',sub:'LEI DE BOYLE — MÚLTIPLA ESCOLHA',type:'mc',
+     problem:`<p>Temperatura constante. O volume é reduzido à <strong>metade</strong>. O que ocorre com a <strong>pressão</strong>?</p><br><div class="formula">Lei de Boyle: P × V = constante</div>`,
+     hint:`Se V cai à metade, P dobra. → <strong>alternativa B</strong>`,
+     options:['A — A pressão cai à metade','B — A pressão dobra','C — A pressão não muda','D — A pressão quadruplica'],answer:'1',unit:''},
+    {icon:'⚖️',title:'Massa de Produto',sub:'CÁLCULO COM MASSA MOLAR',type:'num',
+     problem:`<p>Formação da água: proporção 1:1 (H₂ → H₂O).</p><br><p>Massa molar da H₂O = <strong>18 g/mol</strong>.</p><br><p>Com <strong>4 mol de H₂</strong>:<br>→ 4 mol H₂O formados<br>→ massa = mols × 18</p><br><p>Qual a <strong>massa de H₂O</strong> em gramas?</p>`,
+     hint:`4 × 18 = <strong>72 g</strong>`,answer:'72',unit:'gramas de H₂O'},
+    {icon:'🌡️',title:'Lei de Gay-Lussac',sub:'PRESSÃO E TEMPERATURA',type:'mc',
+     problem:`<p>Volume constante. Gás a <strong>300 K e 1 atm</strong>. A pressão sobe para <strong>2 atm</strong>.</p><br><div class="formula">Lei de Gay-Lussac: P/T = constante</div><br><p>O que ocorreu com a <strong>temperatura</strong>?</p>`,
+     hint:`T₂ = T₁ × (P₂/P₁) = 300 × 2 = <strong>600 K — dobrou</strong>. → alternativa C`,
+     options:['A — Ficou igual (300 K)','B — Caiu à metade (150 K)','C — Dobrou (600 K)','D — Quadruplicou (1200 K)'],answer:'2',unit:''}
+  ],
+  // FASE 3
+  [
+    {icon:'⚖️',title:'Balanceie: Óxido de Ferro',sub:'BALANCEAMENTO DE EQUAÇÕES',type:'num',
+     problem:`<p>Equação parcialmente balanceada:</p><br><div class="formula">__ Fe + __ O₂ → 2 Fe₂O₃</div><br><p>No produto: 2 × Fe₂O₃ = <strong>4 Fe</strong> e <strong>6 O</strong>.</p><br><p>• 6 O ÷ 2 = <strong>3 O₂</strong><br>• O lado do Fe precisa de 4 átomos</p><br><p>Qual o coeficiente do <strong>Fe</strong>?</p>`,
+     hint:`4 Fe + 3 O₂ → 2 Fe₂O₃. Coeficiente do Fe = <strong>4</strong>`,answer:'4',unit:'(coeficiente do Fe)'},
+    {icon:'🧠',title:'Gases Reais',sub:'MÚLTIPLA ESCOLHA AVANÇADA',type:'mc',
+     problem:`<p>Sobre <strong>gases reais</strong> comparados com gases ideais, qual é a afirmativa <strong>correta</strong>?</p>`,
+     hint:`Gases reais têm volume molecular e interações. Desviam do ideal a alta P e baixa T. → <strong>alternativa D</strong>`,
+     options:['A — Seguem PV = nRT perfeitamente em qualquer condição','B — Moléculas de gases reais não possuem volume próprio','C — Não há interação entre moléculas de gases reais','D — Desviam do comportamento ideal a altas pressões e baixas temperaturas'],answer:'3',unit:''},
+    {icon:'⚗️',title:'Reagente Limitante: Amônia',sub:'ESTEQUIOMETRIA AVANÇADA',type:'num',
+     problem:`<p>Síntese da amônia:</p><br><div class="formula">N₂ + 3 H₂ → 2 NH₃</div><br><p>Disponível: <strong>2 mol N₂</strong> e <strong>3 mol H₂</strong>.</p><br><p>Para 2 mol N₂ seriam precisos 6 mol H₂, mas só há 3.<br>→ <strong>H₂ é o limitante</strong>.</p><br><p>3 mol H₂ × (2 NH₃ / 3 H₂) = ? <strong>mol NH₃</strong></p>`,
+     hint:`3 ÷ 3 × 2 = <strong>2 mol NH₃</strong>`,answer:'2',unit:'mol de NH₃'},
+    {icon:'🔬',title:'Balanceie: Combustão do Propano',sub:'BALANCEAMENTO AVANÇADO',type:'num',
+     problem:`<p>Combustão do propano:</p><br><div class="formula">C₃H₈ + __ O₂ → 3 CO₂ + 4 H₂O</div><br><p>Átomos de O no produto:<br>• 3 CO₂ → 6 O<br>• 4 H₂O → 4 O<br>• Total: <strong>10 O</strong> → necessário <strong>? O₂</strong></p>`,
+     hint:`10 O ÷ 2 = <strong>5 O₂</strong>`,answer:'5',unit:'(coeficiente do O₂)'}
+  ],
+  // FASE 4
+  [
+    {icon:'🏆',title:'Lei Geral dos Gases',sub:'P₁V₁/T₁ = P₂V₂/T₂',type:'num',
+     problem:`<p>Gás: <strong>4 L, 300 K, 1 atm</strong>. Após mudança: <strong>T₂ = 600 K, P₂ = 2 atm</strong>.</p><br><div class="formula">V₂ = (P₁ × V₁ × T₂) / (T₁ × P₂)</div><br><p>Calcule o <strong>volume final V₂</strong> em litros.</p>`,
+     hint:`V₂ = (1×4×600)/(300×2) = 2400/600 = <strong>4 litros</strong>`,answer:'4',unit:'litros'},
+    {icon:'🎯',title:'Neutralização — Múltipla Escolha',sub:'ESTEQUIOMETRIA CONCEITUAL',type:'mc',
+     problem:`<p>Qual equação representa <strong>corretamente</strong> a neutralização entre HCl e NaOH?</p>`,
+     hint:`Ácido + base → sal + água. HCl + NaOH → NaCl + H₂O, coeficientes 1:1:1:1. → <strong>alternativa B</strong>`,
+     options:['A — 2 HCl + NaOH → NaCl + H₂O','B — HCl + NaOH → NaCl + H₂O','C — HCl + 2 NaOH → Na₂Cl + 2 H₂O','D — HCl + NaOH → NaClO + H₂'],answer:'1',unit:''},
+    {icon:'⚡',title:'Balanceie: Cloreto de Ferro III',sub:'BALANCEAMENTO FINAL',type:'num',
+     problem:`<p>Reação do ferro com cloro:</p><br><div class="formula">2 Fe + __ Cl₂ → 2 FeCl₃</div><br><p>No produto 2 FeCl₃: 2 × 3 = <strong>6 átomos de Cl</strong>.</p><br><p>Cada Cl₂ tem 2 Cl → <strong>6 ÷ 2 = ?</strong></p>`,
+     hint:`6 ÷ 2 = <strong>3 Cl₂</strong>`,answer:'3',unit:'(coeficiente do Cl₂)'},
+    {icon:'🔐',title:'O Experimento Integrado',sub:'PROBLEMA COMPLETO',type:'num',
+     problem:`<p>Reação: <strong>2 H₂ + O₂ → 2 H₂O</strong></p><br><p>Disponível: <strong>6 mol H₂</strong> e <strong>2 mol O₂</strong>.</p><br><p>Para 6 mol H₂ seriam precisos 3 mol O₂, mas só há 2.<br>→ <strong>O₂ é o limitante</strong>.</p><br><p>Proporção: 1 mol O₂ → 2 mol H₂O.</p><br><p>Com 2 mol O₂, quantos <strong>mols de H₂O</strong> são produzidos?</p>`,
+     hint:`2 mol O₂ × 2 = <strong>4 mol H₂O</strong>`,answer:'4',unit:'mol de H₂O'}
+  ]
+];
+
+// ── MODAL ──
+function openChallenge(ph,idx){
+  initAudio();
+  const c=CH[ph][idx],solved=phaseSolved[ph][idx];
+  let body='';
+  if(solved){
+    body=`<div class="clue-reveal-modal show"><div class="cr-label">DESAFIO CONCLUÍDO</div><div class="cr-digit">✅</div><div class="cr-text">Você já resolveu este desafio!</div></div>`;
+  } else if(c.type==='num'){
+    body=`<div class="answer-row"><input type="number" class="answer-input" id="ans-in" placeholder="Sua resposta..." onkeydown="if(event.key==='Enter')submitNum(${ph},${idx})"><button class="btn-check" onclick="submitNum(${ph},${idx})">Verificar</button></div><div class="feedback-msg" id="fbk"></div>`;
+  } else {
+    body=c.options.map((o,i)=>`<div class="mc-option" id="mco-${i}" onclick="selectMC(${i})"><span class="mc-letter">${String.fromCharCode(65+i)}</span><span>${o.replace(/^\([A-D]\) /,'')}</span></div>`).join('')+`<button class="btn-check-mc" onclick="submitMC(${ph},${idx})">Verificar resposta</button><div class="feedback-msg" id="fbk"></div>`;
+  }
+  document.getElementById('modal-inner').innerHTML=`
+    <div class="modal-icon">${c.icon}</div>
+    <div class="modal-title">${c.title}</div>
+    <div class="modal-subtitle">${c.sub}</div>
+    <div class="problem-box">${c.problem}</div>
+    <div class="hint-section">
+      <button class="hint-toggle" onclick="toggleHint()">🔍 <span id="htxt">Mostrar dica (−15s)</span></button>
+      <div class="hint-content" id="hint-area">${c.hint}</div>
+    </div>
+    ${body}`;
+  mcSelected=null;
+  document.getElementById('modal-overlay').style.display='block';
+  window._mPh=ph;window._mIdx=idx;
+}
+
+function selectMC(i){document.querySelectorAll('.mc-option').forEach((el,j)=>el.classList.toggle('selected',j===i));mcSelected=i;}
+function toggleHint(){const el=document.getElementById('hint-area'),btn=document.getElementById('htxt');el.classList.toggle('show');btn.textContent=el.classList.contains('show')?'Ocultar dica':'Mostrar dica (−15s)';if(el.classList.contains('show'))secondsLeft=Math.max(0,secondsLeft-15);}
+
+function submitNum(ph,idx){
+  const inp=document.getElementById('ans-in'),fb=document.getElementById('fbk'),c=CH[ph][idx];
+  if(inp.value.trim()===c.answer){
+    inp.classList.add('correct');fb.textContent='✓ Correto!';fb.className='feedback-msg ok';
+    playSuccess();markSolved(ph,idx);checkPhaseComplete(ph);
+  } else {
+    inp.classList.add('wrong');fb.textContent='✗ Incorreto. Tente novamente!';fb.className='feedback-msg err';
+    playError();setTimeout(()=>inp.classList.remove('wrong'),400);secondsLeft=Math.max(0,secondsLeft-15);
+  }
+}
+
+function submitMC(ph,idx){
+  if(mcSelected===null)return;
+  const c=CH[ph][idx],fb=document.getElementById('fbk'),opts=document.querySelectorAll('.mc-option');
+  if(String(mcSelected)===c.answer){
+    opts[mcSelected].classList.add('correct-ans');fb.textContent='✓ Correto!';fb.className='feedback-msg ok';
+    playSuccess();markSolved(ph,idx);checkPhaseComplete(ph);
+  } else {
+    opts[mcSelected].classList.add('wrong-ans');fb.textContent='✗ Incorreto. Tente novamente!';fb.className='feedback-msg err';
+    playError();mcSelected=null;setTimeout(()=>opts.forEach(o=>o.classList.remove('wrong-ans','selected')),600);
+    secondsLeft=Math.max(0,secondsLeft-15);
+  }
+}
+
+function markSolved(ph,idx){
+  phaseSolved[ph][idx]=true;
+  document.getElementById(`st-${ph}-${idx}`).textContent='✓ RESOLVIDO';
+  document.getElementById(`st-${ph}-${idx}`).className='card-status st-solved';
+  document.getElementById(`card-${ph}-${idx}`).classList.add('solved');
+}
+
+function checkPhaseComplete(ph){
+  if(!phaseSolved[ph].every(Boolean)||phaseComplete[ph])return;
+  phaseComplete[ph]=true;
+  const pill=document.getElementById(`pill-${ph}`);pill.textContent='✓';pill.classList.add('found');
+  const banner=document.getElementById(`complete-${ph}`);
+  const box=document.createElement('div');box.className='digit-reveal-box';
+  box.innerHTML=`<div class="dr-label">DÍGITO DA FASE ${ph+1} — ANOTE!</div><div class="dr-num">${phaseDigits[ph]}</div><div class="dr-note">Você vai precisar deste número no cofre final.</div>`;
+  banner.insertBefore(box,banner.firstChild);
+  setTimeout(()=>{banner.classList.add('show');banner.scrollIntoView({behavior:'smooth',block:'center'});},400);
+  updateMap();
+  if(ph===3)setTimeout(()=>triggerWin(),1500);
+}
+
+function closeModal(e){if(!e||e.target===document.querySelector('.modal-overlay'))document.getElementById('modal-overlay').style.display='none';}
+
+// ── FINAL ──
+function checkFinal(){
+  initAudio();
+  const val=document.getElementById('final-input').value.trim();
+  const fb=document.getElementById('final-feedback');
+  if(!phaseComplete.every(Boolean)){fb.style.display='block';fb.textContent='⚠ Complete todas as 4 fases primeiro!';playError();return;}
+  if(val===finalCode){
+    clearInterval(timerInterval);playWin();
+    const e=1800-secondsLeft,m=Math.floor(e/60),s=e%60;
+    document.getElementById('win-time-display').textContent=`Tempo: ${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    setTimeout(()=>{document.getElementById('win-screen').classList.add('show');launchConfetti();},600);
+  } else {
+    fb.style.display='block';fb.textContent='✗ Código incorreto. Revise os dígitos de cada fase.';playError();
+  }
+}
+
+function triggerWin(){}
+
+function launchConfetti(){
+  const cols=['#f5b800','#9b6de0','#ffd966','#c39af0','#c47f00','#2d1854'];
+  for(let i=0;i<80;i++){const c=document.createElement('div');c.className='confetti-piece';const sz=Math.random()*10+5;c.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}vw;background:${cols[Math.floor(Math.random()*cols.length)]};border-radius:${Math.random()>.5?'50%':'2px'};animation:confettiFall ${Math.random()*2+1.5}s ${Math.random()*2}s linear forwards;`;document.body.appendChild(c);setTimeout(()=>c.remove(),4000);}
+}
+function restartGame(){location.reload();}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+</script>
+</body>
+</html>
